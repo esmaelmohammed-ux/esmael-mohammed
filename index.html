@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-Time Data Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+        color: white;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+      }
+
+      .controls button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+
+      .controls button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-card h3 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        opacity: 0.8;
+      }
+
+      .stat-card .value {
+        font-size: 2.5rem;
+        font-weight: 700;
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .chart-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      }
+
+      .chart-container h2 {
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+      }
+
+      .data-table {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        overflow-x: auto;
+      }
+
+      .data-table h2 {
+        margin-bottom: 15px;
+        font-size: 1.5rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      th {
+        font-weight: 600;
+        opacity: 0.8;
+      }
+
+      .positive {
+        color: #4ade80;
+      }
+
+      .negative {
+        color: #f87171;
+      }
+
+      @media (max-width: 768px) {
+        .charts-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .header {
+          flex-direction: column;
+          gap: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard">
+      <div class="header">
+        <h1>Real-Time Data Dashboard</h1>
+        <div class="controls">
+          <button id="refreshBtn">Refresh Data</button>
+          <button id="exportBtn">Export Data</button>
+          <button id="themeBtn">Toggle Theme</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Revenue</h3>
+          <div class="value" id="revenue">$0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Active Users</h3>
+          <div class="value" id="users">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Conversion Rate</h3>
+          <div class="value" id="conversion">0%</div>
+        </div>
+        <div class="stat-card">
+          <h3>Avg. Session</h3>
+          <div class="value" id="session">0m</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-container">
+          <h2>Revenue Trends</h2>
+          <canvas id="revenueChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h2>User Distribution</h2>
+          <canvas id="userChart"></canvas>
+        </div>
+      </div>
+
+      <div class="data-table">
+        <h2>Recent Transactions</h2>
+        <table id="transactionTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="transactionBody">
+            <!-- Data will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      // DOM Elements
+      const revenueEl = document.getElementById("revenue");
+      const usersEl = document.getElementById("users");
+      const conversionEl = document.getElementById("conversion");
+      const sessionEl = document.getElementById("session");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const exportBtn = document.getElementById("exportBtn");
+      const themeBtn = document.getElementById("themeBtn");
+      const transactionBody = document.getElementById("transactionBody");
+      //esmael
+      // Chart instances
+      let revenueChart, userChart;
+
+      // Initialize dashboard
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeCharts();
+        updateDashboard();
+        setInterval(updateDashboard, 5000); // Update every 5 seconds
+      });
+
+      // Initialize charts
+      function initializeCharts() {
+        const revenueCtx = document
+          .getElementById("revenueChart")
+          .getContext("2d");
+        const userCtx = document.getElementById("userChart").getContext("2d");
+
+        revenueChart = new Chart(revenueCtx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Revenue",
+                data: [],
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                labels: {
+                  color: "white",
+                },
+              },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  color: "rgba(255, 255, 255, 0.7)",
+                },
+                grid: {
+                  color: "rgba(255, 255, 255, 0.1)",
+                },
+              },
+              y: {
+                ticks: {
+                  color: "rgba(255, 255, 255, 0.7)",
+                },
+                grid: {
+                  color: "rgba(255, 255, 255, 0.1)",
+                },
+              },
+            },
+          },
+        });
+
+        userChart = new Chart(userCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Mobile", "Desktop", "Tablet"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: [
+                  "rgba(255, 99, 132, 0.7)",
+                  "rgba(54, 162, 235, 0.7)",
+                  "rgba(255, 206, 86, 0.7)",
+                ],
+                borderColor: [
+                  "rgba(255, 99, 132, 1)",
+                  "rgba(54, 162, 235, 1)",
+                  "rgba(255, 206, 86, 1)",
+                ],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  color: "white",
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Update dashboard with new data
+      function updateDashboard() {
+        // Generate random data for demonstration
+        const newRevenue = Math.floor(Math.random() * 10000) + 5000;
+        const newUsers = Math.floor(Math.random() * 1000) + 500;
+        const newConversion = (Math.random() * 10).toFixed(1);
+        const newSession = Math.floor(Math.random() * 10) + 2;
+
+        // Update stat cards
+        revenueEl.textContent = `$${newRevenue.toLocaleString()}`;
+        usersEl.textContent = newUsers.toLocaleString();
+        conversionEl.textContent = `${newConversion}%`;
+        sessionEl.textContent = `${newSession}m`;
+
+        // Update revenue chart
+        const now = new Date();
+        const timeLabel = `${now.getHours()}:${now
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}`;
+
+        if (revenueChart.data.labels.length >= 10) {
+          revenueChart.data.labels.shift();
+          revenueChart.data.datasets[0].data.shift();
+        }
+
+        revenueChart.data.labels.push(timeLabel);
+        revenueChart.data.datasets[0].data.push(newRevenue);
+        revenueChart.update();
+
+        // Update user distribution chart
+        userChart.data.datasets[0].data = [
+          Math.floor(Math.random() * 500) + 200,
+          Math.floor(Math.random() * 300) + 150,
+          Math.floor(Math.random() * 200) + 50,
+        ];
+        userChart.update();
+
+        // Update transaction table
+        updateTransactionTable();
+      }
+
+      // Update transaction table with new data
+      function updateTransactionTable() {
+        // Clear existing rows (keep header)
+        while (transactionBody.firstChild) {
+          transactionBody.removeChild(transactionBody.firstChild);
+        }
+
+        // Generate random transactions
+        const statuses = ["Completed", "Pending", "Failed"];
+        const customers = [
+          "John Doe",
+          "Jane Smith",
+          "Robert Johnson",
+          "Emily Davis",
+          "Michael Wilson",
+        ];
+
+        for (let i = 0; i < 5; i++) {
+          const tr = document.createElement("tr");
+          const id = Math.floor(Math.random() * 10000);
+          const customer =
+            customers[Math.floor(Math.random() * customers.length)];
+          const date = new Date(
+            Date.now() - Math.floor(Math.random() * 1000000000)
+          ).toLocaleDateString();
+          const amount = (Math.random() * 1000).toFixed(2);
+          const status = statuses[Math.floor(Math.random() * statuses.length)];
+
+          tr.innerHTML = `
+                    <td>#${id}</td>
+                    <td>${customer}</td>
+                    <td>${date}</td>
+                    <td>$${amount}</td>
+                    <td class="${
+                      status === "Completed"
+                        ? "positive"
+                        : status === "Failed"
+                        ? "negative"
+                        : ""
+                    }">${status}</td>
+                `;
+
+          transactionBody.appendChild(tr);
+        }
+      }
+
+      // Event listeners
+      refreshBtn.addEventListener("click", updateDashboard);
+
+      exportBtn.addEventListener("click", function () {
+        alert("Data exported successfully!");
+      });
+
+      themeBtn.addEventListener("click", function () {
+        document.body.classList.toggle("light-theme");
+
+        if (document.body.classList.contains("light-theme")) {
+          document.body.style.background =
+            "linear-gradient(135deg, #8EC5FC, #E0C3FC)";
+          document.body.style.color = "#333";
+        } else {
+          document.body.style.background =
+            "linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)";
+          document.body.style.color = "white";
+        }
+      });
+    </script>
+  </body>
+</html>

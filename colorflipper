@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>color flipper</title>
+    <style>
+      #green {
+        background-color: green;
+      }
+      #red {
+        background-color: red;
+      }
+      #blue {
+        background-color: blue;
+      }
+      #yellow {
+        background-color: yellow;
+      }
+      button {
+        width: 100px;
+        height: 40px;
+        padding: 5px;
+        border-radius: 5px;
+        font-size: 25px;
+      }
+      button:hover {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>color flipper</h1>
+    <button id="green" onclick="setcolor('green')">green</button>
+    <button id="red" onclick="setcolor('red')">red</button>
+    <button id="blue" onclick="setcolor('blue')">blue</button>
+    <button id="yellow" onclick="setcolor('yellow')">black</button>
+
+    <script>
+      let body = document.getElementsByTagName("body")[0];
+
+      function setcolor(name) {
+        body.style.backgroundColor = name;
+      }
+    </script>
+  </body>
+</html>

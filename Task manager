@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Task Manager</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        color: white;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+      }
+
+      .task-input {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .task-input h2 {
+        margin-bottom: 15px;
+        color: #764ba2;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .input-group input,
+      .input-group select {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+      }
+
+      .input-group button {
+        padding: 12px 25px;
+        background: #764ba2;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: 0.3s;
+      }
+
+      .input-group button:hover {
+        background: #5a3780;
+      }
+
+      .boards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      .board {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .board h2 {
+        margin-bottom: 15px;
+        color: #764ba2;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      .task-list {
+        min-height: 400px;
+        padding: 10px;
+        border-radius: 5px;
+        background: #f9f9f9;
+      }
+
+      .task-item {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        cursor: move;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+      }
+
+      .task-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .task-item h3 {
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      .task-item p {
+        color: #666;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+      }
+
+      .task-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #888;
+      }
+
+      .priority {
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.7rem;
+      }
+
+      .priority-high {
+        background: #ffebee;
+        color: #d32f2f;
+      }
+
+      .priority-medium {
+        background: #fff8e1;
+        color: #ff8f00;
+      }
+
+      .priority-low {
+        background: #e8f5e9;
+        color: #388e3c;
+      }
+
+      .task-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 5px;
+      }
+
+      .task-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+
+      .task-actions button:hover {
+        opacity: 1;
+      }
+
+      .edit-btn {
+        color: #2196f3;
+      }
+
+      .delete-btn {
+        color: #f44336;
+      }
+
+      .dragging {
+        opacity: 0.5;
+        transform: rotate(5deg);
+      }
+
+      .drop-zone {
+        background: #e3f2fd;
+        border: 2px dashed #2196f3;
+      }
+
+      .stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #764ba2;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      @media (max-width: 768px) {
+        .input-group {
+          flex-direction: column;
+        }
+
+        .boards-container {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Advanced Task Manager</h1>
+        <p>Organize your tasks with drag & drop functionality</p>
+      </div>
+
+      <div class="task-input">
+        <h2>Add New Task</h2>
+        <div class="input-group">
+          <input type="text" id="taskTitle" placeholder="Task title" />
+          <textarea
+            id="taskDescription"
+            placeholder="Task description"
+            style="
+              flex: 1;
+              padding: 12px 15px;
+              border: 1px solid #ddd;
+              border-radius: 5px;
+              font-size: 1rem;
+              resize: vertical;
+              min-height: 50px;
+            "
+          ></textarea>
+          <select id="taskPriority">
+            <option value="low">Low Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="high">High Priority</option>
+          </select>
+          <button id="addTaskBtn">Add Task</button>
+        </div>
+      </div>
+
+      <div class="boards-container">
+        <div class="board">
+          <h2>To Do</h2>
+          <div class="task-list" id="todo-list" data-status="todo">
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="board">
+          <h2>In Progress</h2>
+          <div class="task-list" id="inprogress-list" data-status="inprogress">
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+
+        <div class="board">
+          <h2>Completed</h2>
+          <div class="task-list" id="completed-list" data-status="completed">
+            <!-- Tasks will be added here by JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="totalTasks">0</div>
+          <div class="stat-label">Total Tasks</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="completedTasks">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="inProgressTasks">0</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="highPriorityTasks">0</div>
+          <div class="stat-label">High Priority</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Task Manager Class
+      class TaskManager {
+        constructor() {
+          this.tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+          this.currentId = parseInt(localStorage.getItem("currentId")) || 1;
+          this.init();
+        }
+
+        init() {
+          this.renderTasks();
+          this.setupEventListeners();
+          this.updateStats();
+        }
+
+        setupEventListeners() {
+          // Add task button
+          document
+            .getElementById("addTaskBtn")
+            .addEventListener("click", () => {
+              this.addTask();
+            });
+
+          // Enter key to add task
+          document
+            .getElementById("taskTitle")
+            .addEventListener("keypress", (e) => {
+              if (e.key === "Enter") {
+                this.addTask();
+              }
+            });
+
+          // Setup drag and drop
+          this.setupDragAndDrop();
+        }
+
+        setupDragAndDrop() {
+          const taskLists = document.querySelectorAll(".task-list");
+
+          taskLists.forEach((list) => {
+            // Allow drop
+            list.addEventListener("dragover", (e) => {
+              e.preventDefault();
+              list.classList.add("drop-zone");
+            });
+
+            list.addEventListener("dragleave", () => {
+              list.classList.remove("drop-zone");
+            });
+
+            // Handle drop
+            list.addEventListener("drop", (e) => {
+              e.preventDefault();
+              list.classList.remove("drop-zone");
+
+              const taskId = e.dataTransfer.getData("text/plain");
+              const newStatus = list.dataset.status;
+
+              this.updateTaskStatus(parseInt(taskId), newStatus);
+            });
+          });
+        }
+
+        addTask() {
+          const titleInput = document.getElementById("taskTitle");
+          const descInput = document.getElementById("taskDescription");
+          const prioritySelect = document.getElementById("taskPriority");
+
+          const title = titleInput.value.trim();
+          const description = descInput.value.trim();
+          const priority = prioritySelect.value;
+
+          if (!title) {
+            alert("Please enter a task title");
+            return;
+          }
+
+          const task = {
+            id: this.currentId++,
+            title,
+            description,
+            priority,
+            status: "todo",
+            createdAt: new Date().toISOString(),
+          };
+
+          this.tasks.push(task);
+          this.saveToLocalStorage();
+          this.renderTasks();
+          this.updateStats();
+
+          // Clear inputs
+          titleInput.value = "";
+          descInput.value = "";
+          prioritySelect.value = "low";
+          titleInput.focus();
+        }
+
+        deleteTask(id) {
+          if (confirm("Are you sure you want to delete this task?")) {
+            this.tasks = this.tasks.filter((task) => task.id !== id);
+            this.saveToLocalStorage();
+            this.renderTasks();
+            this.updateStats();
+          }
+        }
+
+        updateTaskStatus(id, newStatus) {
+          const task = this.tasks.find((task) => task.id === id);
+          if (task) {
+            task.status = newStatus;
+            this.saveToLocalStorage();
+            this.renderTasks();
+            this.updateStats();
+          }
+        }
+
+        editTask(id) {
+          const task = this.tasks.find((task) => task.id === id);
+          if (task) {
+            const newTitle = prompt("Edit task title:", task.title);
+            if (newTitle !== null) {
+              task.title = newTitle.trim();
+
+              const newDesc = prompt(
+                "Edit task description:",
+                task.description
+              );
+              if (newDesc !== null) {
+                task.description = newDesc.trim();
+              }
+
+              this.saveToLocalStorage();
+              this.renderTasks();
+            }
+          }
+        }
+
+        renderTasks() {
+          // Clear all task lists
+          document.getElementById("todo-list").innerHTML = "";
+          document.getElementById("inprogress-list").innerHTML = "";
+          document.getElementById("completed-list").innerHTML = "";
+
+          // Render tasks to their respective lists
+          this.tasks.forEach((task) => {
+            const taskElement = this.createTaskElement(task);
+            document
+              .getElementById(`${task.status}-list`)
+              .appendChild(taskElement);
+          });
+        }
+
+        createTaskElement(task) {
+          const taskDiv = document.createElement("div");
+          taskDiv.className = "task-item";
+          taskDiv.draggable = true;
+          taskDiv.dataset.id = task.id;
+
+          // Format date
+          const createdDate = new Date(task.createdAt);
+          const formattedDate = createdDate.toLocaleDateString();
+
+          taskDiv.innerHTML = `
+                    <div class="task-actions">
+                        <button class="edit-btn" onclick="taskManager.editTask(${
+                          task.id
+                        })">✏️</button>
+                        <button class="delete-btn" onclick="taskManager.deleteTask(${
+                          task.id
+                        })">🗑️</button>
+                    </div>
+                    <h3>${this.escapeHtml(task.title)}</h3>
+                    <p>${this.escapeHtml(task.description)}</p>
+                    <div class="task-meta">
+                        <span class="priority priority-${
+                          task.priority
+                        }">${task.priority.toUpperCase()}</span>
+                        <span>${formattedDate}</span>
+                    </div>
+                `;
+
+          // Drag event listeners
+          taskDiv.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", task.id);
+            taskDiv.classList.add("dragging");
+          });
+
+          taskDiv.addEventListener("dragend", () => {
+            taskDiv.classList.remove("dragging");
+          });
+
+          return taskDiv;
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        updateStats() {
+          const totalTasks = this.tasks.length;
+          const completedTasks = this.tasks.filter(
+            (task) => task.status === "completed"
+          ).length;
+          const inProgressTasks = this.tasks.filter(
+            (task) => task.status === "inprogress"
+          ).length;
+          const highPriorityTasks = this.tasks.filter(
+            (task) => task.priority === "high"
+          ).length;
+
+          document.getElementById("totalTasks").textContent = totalTasks;
+          document.getElementById("completedTasks").textContent =
+            completedTasks;
+          document.getElementById("inProgressTasks").textContent =
+            inProgressTasks;
+          document.getElementById("highPriorityTasks").textContent =
+            highPriorityTasks;
+        }
+
+        saveToLocalStorage() {
+          localStorage.setItem("tasks", JSON.stringify(this.tasks));
+          localStorage.setItem("currentId", this.currentId.toString());
+        }
+      }
+
+      // Initialize the task manager
+      const taskManager = new TaskManager();
+    </script>
+  </body>
+</html>
